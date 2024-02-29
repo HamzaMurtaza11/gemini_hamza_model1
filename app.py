@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from pathlib import Path
 import google.generativeai as genai
-from waitress import serve
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -59,5 +58,3 @@ def generate_content():
     response = model.generate_content(prompt_parts)
     return jsonify({"response": response.text})
 
-if __name__ == '__main__':
-    serve(app, host='0.0.0.0', port=8080)

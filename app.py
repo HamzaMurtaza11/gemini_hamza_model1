@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
-from pathlib import Path
 import google.generativeai as genai
+import io  # For in-memory bytes handling
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -35,26 +35,32 @@ def generate_content():
         return jsonify({"error": "Both image file and text are required"}), 400
 
     image_file = request.files['image']
+    content_type = image_file.content_type
+    # Ensure the file is in one of the acceptable formats
+    if content_type not in ['image/png', 'image/jpg', 'image/jpeg']:
+        return jsonify({"error": "Unsupported image format"}), 400
+
     user_text = request.form['text']  # Retrieve text from the form data
-    image_path = Path(image_file.filename)
-    image_path.write_bytes(image_file.read())
+    # Read the image file into a bytes buffer
+    image_bytes = io.BytesIO()
+    image_file.save(image_bytes)
+    image_data = image_bytes.getvalue()
 
-    if not image_path.exists():
-        return jsonify({"error": "Could not process the image"}), 500
-
-    # Prepare the prompt with the image and user-provided text data
-    image_parts = [{"mime_type": "image/jpeg", "data": image_path.read_bytes()}]
+    # Assuming the API expects a base64-encoded string for the image
+    # You would need to convert `image_data` to base64 if required by your API
+    # For now, we will proceed as if the API can handle raw bytes directly
+    
     fixed_text = "Analyze the image and the provided text both data deeply. After analyzing both the image and text data, write a detailed diet plan and exercise plan according to the provided image and text data. The diet and exercise plan should include proper numbering, headings, and subheadings. Prepare a detailed plan of approximately 1000 words with extra tips and suggestions."
     
     prompt_parts = [
         user_text,  # User-provided text
         " ",
         fixed_text,
-        image_parts[0],
-        
+        {"mime_type": content_type, "data": image_data},
     ]
 
     # Generate content using the model
     response = model.generate_content(prompt_parts)
     return jsonify({"response": response.text})
+
 

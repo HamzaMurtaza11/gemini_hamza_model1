@@ -60,7 +60,8 @@ def generate_content():
     ]
 
     # Generate content using the model
-    response = model.generate_content(prompt_parts)
+    response = model.generate_content(prompt_parts,stream=True)
+    response.resolve()
     return jsonify({"response": response.text})
 
 
